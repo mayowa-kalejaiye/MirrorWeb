@@ -48,9 +48,9 @@ def clone_website(base_url, folder_name):
 def home():
     return send_from_directory('.', 'index.html')
 
-# @app.route('/about')
-# def about():
-#     return send_from_directory('.', 'me.html')
+@app.route('/about')
+def about():
+    return send_from_directory('.', 'me.html')
 
 @app.route('/clone', methods=['POST'])
 def clone_site():
