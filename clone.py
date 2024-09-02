@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory, redirect, url_for
+from flask import Flask, request, render_template, send_from_directory, redirect, url_for
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -6,21 +6,23 @@ from urllib.parse import urljoin, urlparse
 
 app = Flask(__name__)
 
+# Directory for cloned site files
 CLONE_FOLDER = 'cloned_site'
 app.config['CLONE_FOLDER'] = CLONE_FOLDER
 
 def download_file(url, folder):
     try:
         response = requests.get(url)
-        if response.status_code == 200:
-            parsed_url = urlparse(url)
-            subdir = os.path.join(folder, os.path.dirname(parsed_url.path.lstrip('/')))
-            os.makedirs(subdir, exist_ok=True)
-            filepath = os.path.join(subdir, os.path.basename(parsed_url.path))
-            
-            with open(filepath, 'wb') as file:
-                file.write(response.content)
-            print(f"Downloaded: {url}")
+        response.raise_for_status()  # Check if request was successful
+        parsed_url = urlparse(url)
+        subdir = os.path.join(folder, os.path.dirname(parsed_url.path.lstrip('/')))
+        os.makedirs(subdir, exist_ok=True)
+        filepath = os.path.join(subdir, os.path.basename(parsed_url.path))
+        
+        # Save the file content
+        with open(filepath, 'wb') as file:
+            file.write(response.content)
+        print(f"Downloaded: {url}")
     except requests.exceptions.RequestException as e:
         print(f"Failed to download {url}: {e}")
 
@@ -30,6 +32,7 @@ def clone_website(base_url, folder_name):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
 
+        # Update links and download necessary files
         for tag, attr in [('link', 'href'), ('script', 'src'), ('img', 'src')]:
             for element in soup.find_all(tag):
                 url = element.get(attr)
@@ -37,7 +40,8 @@ def clone_website(base_url, folder_name):
                     full_url = urljoin(base_url, url)
                     element[attr] = f"/cloned_site/{os.path.basename(url)}"
                     download_file(full_url, folder_name)
-        
+
+        # Save the updated HTML content
         with open(os.path.join(folder_name, 'index.html'), 'w', encoding='utf-8') as file:
             file.write(soup.prettify())
     
@@ -46,16 +50,14 @@ def clone_website(base_url, folder_name):
 
 @app.route('/')
 def home():
-    return send_from_directory('.', 'index.html')
-
-@app.route('/about')
-def about():
-    return send_from_directory('.', 'me.html')
+    return render_template('index.html')
 
 @app.route('/clone', methods=['POST'])
 def clone_site():
     website_url = request.form['url']
     clone_website(website_url, app.config['CLONE_FOLDER'])
+    
+    # Automatically redirect to the cloned site
     return redirect(url_for('serve_cloned_site'))
 
 @app.route('/cloned_site/')
