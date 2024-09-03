@@ -1,8 +1,8 @@
-from flask import Flask, send_from_directory, request, jsonify, cross_origin
+from flask import Flask, send_from_directory, request, jsonify
 import os
 import requests
 from bs4 import BeautifulSoup
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 
 
 app = Flask(__name__)
