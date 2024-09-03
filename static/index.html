@@ -282,49 +282,47 @@ async function submitForm(event) {
     const messageInterval = setInterval(updateButtonText, 2200);
 
     try {
-        // Fetch from API
-        const response = await fetch(`https://cherie.marvelly.com.ng/screenshot?thirdparty=1&url=${encodeURIComponent(randWord)}`);
-        
-        // // Check if the response is OK
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-
-        // Debug: Log the response data
-        console.log('API response:', data);
-
-        // Hide #app and show #app2
-        document.getElementById("confetti").click();
-        document.getElementById('app').style.display = 'none';
-        const app2 = document.getElementById('app2');
-        app2.style.display = 'block';
-
-        // Update #app2 with API response
-        document.getElementById('api_title').innerText = data.title;
-        document.getElementById('api_img').src = data.screenshotURL;
-
-        // Clear the interval and reset the button state
-        clearInterval(messageInterval);
-        submitButton.innerText = 'Submit';
-        submitButton.classList.remove('submitting');
-        submitButton.disabled = false;
-
-        // Reset the form fields
-        document.getElementById('linkForm').reset();
-
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        message.innerText = 'An error occurred while fetching the screenshot.';
-        message.style.display = 'block';
-
-        // Clear the interval and reset the button state
-        clearInterval(messageInterval);
-        submitButton.innerText = 'Submit';
-        submitButton.classList.remove('submitting');
-        submitButton.disabled = false;
+    // Fetch from your API
+    const response = await fetch(`http://127.0.0.1:5000/screenshot?url=${encodeURIComponent(randWord)}`);
+    
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
     }
+
+    const data = await response.json();
+
+    // Debug: Log the response data
+    console.log('API response:', data);
+
+    // Handle the response
+    document.getElementById("confetti").click();
+    document.getElementById('app').style.display = 'none';
+    const app2 = document.getElementById('app2');
+    app2.style.display = 'block';
+
+    // Update with API response
+    document.getElementById('api_title').innerText = 'Downloaded Page';
+    document.getElementById('api_img').src = ''; // Update based on your needs
+
+    // Reset button state
+    clearInterval(messageInterval);
+    submitButton.innerText = 'Submit';
+    submitButton.classList.remove('submitting');
+    submitButton.disabled = false;
+
+    // Reset the form fields
+    document.getElementById('linkForm').reset();
+
+} catch (error) {
+    console.error('Error fetching data:', error);
+    message.innerText = 'An error occurred while fetching the page.';
+    message.style.display = 'block';
+
+    clearInterval(messageInterval);
+    submitButton.innerText = 'Submit';
+    submitButton.classList.remove('submitting');
+    submitButton.disabled = false;
+}
 }
 
 // Handle the save image button click

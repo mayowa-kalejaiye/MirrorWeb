@@ -1,73 +1,76 @@
-from flask import Flask, request, render_template, send_from_directory, redirect, url_for
+from flask import Flask, render_template, send_from_directory, request, jsonify
 import os
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
 
 app = Flask(__name__)
 
-# Directory for cloned site files
-CLONE_FOLDER = 'cloned_site'
-app.config['CLONE_FOLDER'] = CLONE_FOLDER
-
-def download_file(url, folder):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Check if request was successful
-        parsed_url = urlparse(url)
-        subdir = os.path.join(folder, os.path.dirname(parsed_url.path.lstrip('/')))
-        os.makedirs(subdir, exist_ok=True)
-        filepath = os.path.join(subdir, os.path.basename(parsed_url.path))
-        
-        # Save the file content
-        with open(filepath, 'wb') as file:
-            file.write(response.content)
-        print(f"Downloaded: {url}")
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to download {url}: {e}")
-
-def clone_website(base_url, folder_name):
-    try:
-        response = requests.get(base_url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        # Update links and download necessary files
-        for tag, attr in [('link', 'href'), ('script', 'src'), ('img', 'src')]:
-            for element in soup.find_all(tag):
-                url = element.get(attr)
-                if url:
-                    full_url = urljoin(base_url, url)
-                    element[attr] = f"/cloned_site/{os.path.basename(url)}"
-                    download_file(full_url, folder_name)
-
-        # Save the updated HTML content
-        with open(os.path.join(folder_name, 'index.html'), 'w', encoding='utf-8') as file:
-            file.write(soup.prettify())
-    
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to clone the website: {e}")
+# Directory for saving downloaded files
+DOWNLOAD_FOLDER = 'cloned_site'
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
 
-@app.route('/clone', methods=['POST'])
-def clone_site():
-    website_url = request.form['url']
-    clone_website(website_url, app.config['CLONE_FOLDER'])
-    
-    # Automatically redirect to the cloned site
-    return redirect(url_for('serve_cloned_site'))
+@app.route('/me')
+def me():
+    return render_template('me.html')
 
-@app.route('/cloned_site/')
-def serve_cloned_site():
-    return send_from_directory(app.config['CLONE_FOLDER'], 'index.html')
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(DOWNLOAD_FOLDER, filename)
 
-@app.route('/cloned_site/<path:filename>')
-def serve_cloned_site_file(filename):
-    return send_from_directory(app.config['CLONE_FOLDER'], filename)
+@app.route('/screenshot', methods=['GET'])
+def screenshot():
+    url = request.args.get('url')
+    if not url:
+        return jsonify({"error": "URL parameter is required"}), 400
+
+    # Process URL and save files
+    try:
+        # Fetch the URL
+        response = requests.get(url)
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch the URL"}), 500
+
+        # Parse the HTML
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Save the HTML
+        html_file_path = os.path.join(DOWNLOAD_FOLDER, 'index.html')
+        with open(html_file_path, 'w', encoding='utf-8') as file:
+            file.write(soup.prettify())
+
+        # Extract and save CSS files
+        css_files = soup.find_all('link', rel='stylesheet')
+        for css in css_files:
+            css_url = css.get('href')
+            if css_url:
+                if not css_url.startswith('http'):
+                    css_url = requests.compat.urljoin(url, css_url)
+                css_response = requests.get(css_url)
+                if css_response.status_code == 200:
+                    css_file_path = os.path.join(DOWNLOAD_FOLDER, css_url.split('/')[-1])
+                    with open(css_file_path, 'w', encoding='utf-8') as file:
+                        file.write(css_response.text)
+
+        # Extract and save JavaScript files
+        js_files = soup.find_all('script', src=True)
+        for js in js_files:
+            js_url = js.get('src')
+            if js_url:
+                if not js_url.startswith('http'):
+                    js_url = requests.compat.urljoin(url, js_url)
+                js_response = requests.get(js_url)
+                if js_response.status_code == 200:
+                    js_file_path = os.path.join(DOWNLOAD_FOLDER, js_url.split('/')[-1])
+                    with open(js_file_path, 'w', encoding='utf-8') as file:
+                        file.write(js_response.text)
+
+        return jsonify({"message": "Page downloaded successfully", "url": url}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    os.makedirs(CLONE_FOLDER, exist_ok=True)
     app.run(debug=True)
