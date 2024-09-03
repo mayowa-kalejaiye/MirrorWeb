@@ -11,11 +11,11 @@ os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html')  # This serves from the templates folder
 
 @app.route('/me')
 def me():
-    return render_template('me.html')
+    return render_template('me.html')  # This serves from the templates folder
 
 @app.route('/<path:filename>')
 def serve_static(filename):
@@ -36,7 +36,7 @@ def screenshot():
 
         # Parse the HTML
         soup = BeautifulSoup(response.text, 'html.parser')
-        
+
         # Save the HTML
         html_file_path = os.path.join(DOWNLOAD_FOLDER, 'index.html')
         with open(html_file_path, 'w', encoding='utf-8') as file:
