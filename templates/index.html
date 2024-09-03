@@ -207,7 +207,7 @@
                                             </div>
                                         </div>
                                         <div>
-                                            <a href='/cloned_site'><button id="save" class="cg4ff czbbd cfhsj czmlk ceto1 ccs7d coe0p chuxb">Load Page</button></a>
+                                            <button id="save" class="cg4ff czbbd cfhsj czmlk ceto1 ccs7d coe0p chuxb">Load Page</button>
                                         </div>
                                     </div>
                                 </div>
@@ -283,7 +283,7 @@ async function submitForm(event) {
 
     try {
     // Fetch from your API
-    const response = await fetch(`http://127.0.0.1:5000/screenshot?url=${encodeURIComponent(randWord)}`);
+    const response = await fetch(`/screenshot?url=${encodeURIComponent(randWord)}`);
     
     if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -301,8 +301,13 @@ async function submitForm(event) {
     app2.style.display = 'block';
 
     // Update with API response
-    document.getElementById('api_title').innerText = 'Downloaded Page';
-    document.getElementById('api_img').src = ''; // Update based on your needs
+    const loadPageButton = document.getElementById('save');
+    document.getElementById('api_title').innerText = 'Page downloaded successfully. Click "Load Page" to view it.';
+
+    // Add click event to load page button
+    loadPageButton.addEventListener('click', function() {
+                    window.open('/index.html', '_blank');
+                });
 
     // Reset button state
     clearInterval(messageInterval);
