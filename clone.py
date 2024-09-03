@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request, jsonify
+from flask import Flask, send_from_directory, request, jsonify
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -11,11 +11,11 @@ os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return send_from_directory('.', 'index.html')
 
 @app.route('/me')
 def me():
-    return render_template('me.html')
+    return send_from_directory('.', 'me.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):
