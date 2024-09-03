@@ -283,7 +283,7 @@ async function submitForm(event) {
 
     try {
     // Fetch from your API
-    const response = await fetch(`/screenshot?url=${encodeURIComponent(randWord)}`);
+    const response = await fetch(`http://127.0.0.1:5000//screenshot?url=${encodeURIComponent(randWord)}`);
     
     if (!response.ok) {
         throw new Error('Network response was not ok');
