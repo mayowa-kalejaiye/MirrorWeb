@@ -1,9 +1,12 @@
-from flask import Flask, send_from_directory, request, jsonify
+from flask import Flask, send_from_directory, request, jsonify, cross_origin
 import os
 import requests
 from bs4 import BeautifulSoup
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)
 
 # Directory for saving downloaded files
 DOWNLOAD_FOLDER = 'cloned_site'
@@ -22,6 +25,7 @@ def serve_static(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename)
 
 @app.route('/screenshot', methods=['GET'])
+@cross_origin(origins='https://your-github-pages-url.com')  # Allow CORS for specific origin
 def screenshot():
     url = request.args.get('url')
     if not url:
