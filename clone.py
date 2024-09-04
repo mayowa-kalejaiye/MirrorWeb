@@ -3,10 +3,35 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from flask_cors import CORS, cross_origin
+import logging
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import redis
 
+logging.basicConfig(filename='clone.log', level=logging.DEBUG)
 
 app = Flask(__name__)
 CORS(app)
+
+logging.basicConfig(
+    filename='clone.log',
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Test logging
+# logging.debug('This is a debug message')
+# logging.info('This is an info message')
+# logging.error('This is an error message')
+
+
+# Configure Redis as the storage backend
+redis_connection = redis.Redis(host='localhost', port=6379, db=0)
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    storage_uri='redis://localhost:6379'
+)
 
 # Directory for saving downloaded files
 DOWNLOAD_FOLDER = 'cloned_site'
@@ -16,7 +41,7 @@ os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 def index():
     return send_from_directory('.', 'index.html')
 
-@app.route('/me')
+@app.route('/about')
 def me():
     return send_from_directory('.', 'me.html')
 
@@ -25,7 +50,8 @@ def serve_static(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename)
 
 @app.route('/screenshot', methods=['GET'])
-@cross_origin(origins='https://your-github-pages-url.com')  # Allow CORS for specific origin
+@cross_origin(origins='https://mayowa-kalejaiye.github.io/MirrorWeb/')  # Allow CORS for specific origin
+@limiter.limit("10 per minute")  # Rate limit configuration
 def screenshot():
     url = request.args.get('url')
     if not url:
