@@ -111,4 +111,6 @@ def screenshot():
 
 if __name__ == '__main__':
     # Use a production server like Gunicorn instead of the built-in development server
-    app.run(debug=True, use_reloader=False)
+    import os
+    debug_mode = os.getenv('FLASK_ENV') == 'development'
+    app.run(debug=debug_mode, use_reloader=False)
